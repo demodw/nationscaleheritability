@@ -11,7 +11,7 @@ module HeritabilityModule
 	using Cubature
 	using Optim
 
-	export calculate_cov, preprocessing
+	export calculate_cov, preprocessing, make_pheno, make_pheno_gc
 
 	# Functions for simulating data
 	"""
@@ -30,24 +30,38 @@ module HeritabilityModule
 			println("error")
 			return
 			end
-		d=Normal()
+		d = Normal()
 		
 		ep = zeros(length(fixed))
 		l = zeros(length(fixed))
 	
 		for i in 1:length(chol_list)
-			ep. = rand(d,length(fixed))
-			l.+ = chol_list[i]*ep*sqrt(var[i])
+			ep .= rand(d,length(fixed))
+			l .+= chol_list[i]*ep*sqrt(var[i])
 		end
 		
-		ep. = rand(d,length(fixed))
-		l.+ = sqrt(1-sum(var))*sparse(I,length(fixed),length(fixed))*ep
+		ep .= rand(d,length(fixed))
+		l .+= sqrt(1-sum(var))*sparse(I,length(fixed),length(fixed))*ep
 		
 		l = l.+fixed
 		phe = 1*(l.>0)
 		return phe
 	end
 
+
+	"""
+	Simulate phenotype for univariate analysis of heritability
+
+	var1: list of variances for phenotype 1 to simulate
+
+	var2: list of variances for phenotype 2 to simulate
+
+	chol_list: list of covariances matrixes in their Cholesky form
+
+	fixed: list of fixed effects for eacn individual
+	
+	output: vector of simulated phenotype
+	"""
 	function make_gc_phe(;var1,var2,chol,cor_list,fixed1,fixed2)
 		#all lists contain residual variance. So, the last enry in chol_list should be Id
 		N = length(fixed1)*2
@@ -58,10 +72,10 @@ module HeritabilityModule
 		for i in 1:length(chol)
 			covar_mat = [[var1[i],cov[i]] [cov[i],var2[i]]]
 			covar_chol = cholesky(covar_mat).L
-			l.+ = kron(sparse(covar_chol),chol[i])*rand(Normal(),N)
+			l .+= kron(sparse(covar_chol),chol[i])*rand(Normal(),N)
 		end
 	
-		l.+ = vcat(fixed1,fixed2)
+		l .+= vcat(fixed1,fixed2)
 		phe = 1*(l.>0)
 		phe1 = phe[1:Int64(N/2)]
 		phe2 = phe[Int64(N/2)+1:N]
@@ -69,7 +83,6 @@ module HeritabilityModule
 	end
 	
 
-	
 	"""
 	Format data to long format
 	
@@ -111,7 +124,7 @@ module HeritabilityModule
                 
     mat: a variance matrix from mat_list
     
-    output: ??
+    output: Indexes for rows with non-zero values (???)
 
 	"""
     function col_values(mat)
@@ -142,8 +155,8 @@ module HeritabilityModule
 	function calculate_fixed(phe,fixed)
 		float_fixed = zeros(Float64, length(fixed))
 		for f in unique(fixed)
-			pre = sum(phe[fixed .==f])/length(fixed[fixed .==f])
-			float_fixed[fixed .==f] .= quantile.(Normal(),pre)	
+			pre = sum(phe[fixed .== f])/length(fixed[fixed .== f])
+			float_fixed[fixed .== f] .= quantile.(Normal(),pre)	
 		end
 
 		return float_fixed
@@ -225,7 +238,7 @@ module HeritabilityModule
     i: ??
     gc: true if genetic covariance is calculated
 
-    output: ??
+    output: factor
 	"""
 	function calculate_factor(mv,p,i,gc)
 		if gc == true
@@ -244,7 +257,7 @@ module HeritabilityModule
     c: as defined defined in the appendix to the supplement
     fixed: f1 and f2, the fixed effects, as defined in the appendix to the supplement
 
-    output: ??
+    output: gradient
 	"""
     function calculate_gradient_integral_pair(;fixed,c)
 		if fixed[2] == -Inf
@@ -257,10 +270,10 @@ module HeritabilityModule
     """
 	calculate loss as defined in equation (5) from the supplement:
                 
-    F: phenotype??
-    G: fixed effects??
-    parameters:
-    to_cal: 
+    F: Function to optimize
+    G: Gradient for optimization
+    parameters: Covariance values
+    to_cal: ???
     gc: true if genetic covariance is calculated
 
     output: the loss as defined in equation (5) from the supplement
@@ -313,7 +326,6 @@ module HeritabilityModule
 	output: If phe2 is not passed, the output is a list of variance components corresponding to the matrices in mat_list. length(calculate_cov(...phe2=nothing...))=length(mat_list)+1. If phe2 is passed, the output is a list of correlations. The correlations in the residual matrix are not currently calculated as these seem to be highly imprecise. So length(calculate_cov(...phe2=phe2...))=length(mat_list).
 	"""
 	function calculate_cov(;phe,fixed,mat_list=nothing,long=nothing,phe2=nothing, var1=nothing,var2=nothing)
-		gc = false #what does gc indicate??
 		N = length(fixed)
 
 		# create long form
@@ -326,11 +338,10 @@ module HeritabilityModule
 
 		if !isnothing(phe2) # if we want to compute covariance between two phenotypes 
 			gc = true
-			
+
 			if isnothing(var1) 
 				var1 = calculate_cov(phe=phe,fixed=fixed,mat_list=mat_list,long=long) #calculate variance components phenotype 1 
 			end
-		
 			if isnothing(var2) 
 				var2 = calculate_cov(phe=phe2,fixed=fixed,mat_list=mat_list,long=long) #calculate variance components phenotype 2 
 			end
@@ -342,8 +353,9 @@ module HeritabilityModule
 			fixed1 = fixed.*"1"
 			fixed2 = fixed.*"2"
 			fixed = vcat(fixed1,fixed2)
-
 			phe = vcat(phe,phe2)
+		else
+			gc = false
 		end
 
 		fixed = calculate_fixed(phe,fixed) # estimate fixed effects
@@ -357,7 +369,6 @@ module HeritabilityModule
 		long = transform(long,[:fixed_row,:fixed_col]=> ByRow((x,y)->if x>y; x; else; y ; end)=> :fixed_high)	
 	 	long = select(long,Not([:fixed_row,:fixed_col]))
 
-		
 		##find unique entries to be calculated
 		phe = DataFrame(phe=phe,rowid=1:length(phe))
 		long = leftjoin(long,phe,on=:row => :rowid)
