@@ -167,8 +167,8 @@ module HeritabilityModule
 	"""
 	gives E(Y1Y2) = expected value of correlation between two phenotypes
 	
-	c: as defined defined in the appendix to the supplement
-	fixed: f1 and f2, the fixed effects, as defined in the appendix to the supplement
+	c: as defined in the supplement (Estimation of the expected product of phenotypes section)
+	fixed: f1 and f2, the fixed effects, as defined in the supplement (Estimation of the expected product of phenotypes section)
 
 	output: E(Y1,Y2)
 	"""
@@ -178,14 +178,13 @@ module HeritabilityModule
 		end
 
 		#find maximum of density using multidimensional h-adaptive integration
-		#is E(Y1Y2) from appendix
+		#is E(Y1Y2) from supplement
 		return hcubature(y->density(y,fix=fixed,c=c),[0,0],[1,1],abstol=1e-5)[1] 
 	end
 
 
     """
-	helper function for the gradient (= partial derivative with respect to p_i of E(Y1Y2)), as defined in the appendix to the supplement
-        is this the differentiated normal pdf?
+	helper function for the gradient (= partial derivative with respect to p_i of E(Y1Y2)), as defined in equation (8) in the supplement
 
     x: value at which gradient is computed    
 	"""
@@ -197,10 +196,10 @@ module HeritabilityModule
 
     """
 	helper function to function calculate_gradient_integral_pair
-        gives the gradient at a specific x (= partial derivative with respect to p_i (= prevalence of phenotype in group i??) of E(Y1Y2)), see appendix to the supplement
+        gives the gradient at a specific x (= partial derivative with respect to p_i (= prevalence of phenotype in group i??) of E(Y1Y2)), see equation (8) the supplement
 	x: value at which gradient is computed
-    f: f1 and f2, the fixed effects, as defined in the appendix to the supplement
-    c: as defined defined in the appendix to the supplement
+    f: f1 and f2, the fixed effects, as in equation (8) in the supplement
+    c: as defined defined in the supplement (Estimation of the expected product of phenotypes section)
 
     output: gradient
 	"""
@@ -216,9 +215,9 @@ module HeritabilityModule
 	helper function for calculating E(Y1, Y2)
         gives the density of E(Y1,Y2)
 
-	y: x1 and x2 in in E(Y1,Y2) as defined in the appendix to the supplement
-    fix: f1 and f2, the fixed effects, as defined in the appendix to the supplement
-    c: as defined defined in the appendix to the supplement
+	y: x1 and x2 in E(Y1,Y2) as in equation (7) in the supplement
+    fix: f1 and f2, the fixed effects, as in equation (7) in the supplement
+    c: as defined defined in the supplement (Estimation of the expected product of phenotypes section)
 
     output: density value
 	"""
@@ -254,8 +253,8 @@ module HeritabilityModule
 	helper function to calculate loss:
         computes the gradient (= partial derivative with respect to p_i of E(Y1Y2)) using multidimensional h-adaptive integration
         
-    c: as defined defined in the appendix to the supplement
-    fixed: f1 and f2, the fixed effects, as defined in the appendix to the supplement
+    c: as defined defined in the supplement (Estimation of the expected product of phenotypes section)
+    fixed: f1 and f2, the fixed effects
 
     output: gradient
 	"""
