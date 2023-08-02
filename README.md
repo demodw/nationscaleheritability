@@ -1,5 +1,5 @@
 # nationscaleheritability
-Calculation of heritability in nation-scale  data
+Calculation of heritability on nation-scale  data
 
 # TODO
 
