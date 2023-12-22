@@ -1,11 +1,6 @@
 # nationscaleheritability
 Calculation of heritability on nation-scale  data
 
-# TODO
-
-* Add anonymised pedigree (Jolien)
-* Write documentation for how to estimate heritability / genetic correlations (Jolien / David)
-
 
 # How to run ...
 
